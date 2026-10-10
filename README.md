@@ -202,6 +202,7 @@ publishes it from `main` to the `nandi-testing` channel on prefix.dev:
 pixi global install -c https://prefix.dev/nandi-testing -c conda-forge ghostnim
 ```
 
+It adds a ghostnim launcher to the desktop menu (menuinst, `recipe/menu.json`).
 GTK 3 comes from the host, as with the AppImage. To build the package
 locally, run `APPDIR_ONLY=1 sh scripts/build-appimage.sh`, then
 `rattler-build build --recipe recipe`.

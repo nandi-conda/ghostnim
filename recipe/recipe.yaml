@@ -16,17 +16,21 @@ package:
   version: ${{ version }}
 
 source:
-  path: ../build/AppDir
+  - path: ../build/AppDir
+  - path: menu.json
+    file_name: menu.json
 
 build:
   number: ${{ build_number | int }}
   skip: not linux
   script:
-    - mkdir -p $PREFIX/lib $PREFIX/bin $PREFIX/share/applications $PREFIX/share/icons/hicolor/scalable/apps
+    - mkdir -p $PREFIX/lib $PREFIX/bin $PREFIX/Menu $PREFIX/share/icons/hicolor/scalable/apps
     - cp -a usr/lib/ghostnim $PREFIX/lib/ghostnim
     - ln -s ../lib/ghostnim/ghostnim $PREFIX/bin/ghostnim
-    - cp ghostnim.desktop $PREFIX/share/applications/
     - cp ghostnim.svg $PREFIX/share/icons/hicolor/scalable/apps/
+    # Desktop launcher, installed by menuinst (pixi global, conda).
+    - cp menu.json $PREFIX/Menu/ghostnim.json
+    - cp ghostnim.png $PREFIX/Menu/ghostnim.png
   # The Flutter bundle already finds its libraries through $ORIGIN/lib.
   dynamic_linking:
     binary_relocation: false
@@ -41,6 +45,8 @@ tests:
         - lib/ghostnim/ghostnim
         - lib/ghostnim/lib/libghostty-vt.so*
         - lib/ghostnim/data/fonts/**
+        - Menu/ghostnim.json
+        - Menu/ghostnim.png
 
 about:
   homepage: https://github.com/codegod100/ghostnim

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema",
+  "$id": "https://schemas.conda.io/menuinst-1.schema.json",
+  "menu_name": "ghostnim",
+  "menu_items": [
+    {
+      "name": "ghostnim",
+      "description": "A terminal emulator powered by libghostty-vt",
+      "command": ["{{ PREFIX }}/bin/ghostnim"],
+      "icon": "{{ MENU_DIR }}/ghostnim.{{ ICON_EXT }}",
+      "terminal": false,
+      "platforms": {
+        "linux": {
+          "GenericName": "Terminal",
+          "Categories": ["System", "TerminalEmulator"],
+          "Keywords": ["terminal", "shell", "prompt", "command", "commandline"],
+          "StartupWMClass": "ghostnim"
+        }
+      }
+    }
+  ]
+}
