@@ -1,6 +1,6 @@
 # Build the AppImage on every push and pull request. Pushes to main also
 # publish it to the GitHub release tagged `release` (replacing its assets),
-# which is where installed AppImages update from (src/ghostnim/update.nim, or AppImageUpdate via the embedded
+# which is where installed AppImages update from (lib/src/update.dart, or AppImageUpdate via the embedded
 # zsync update information).
 name: AppImage
 
@@ -29,46 +29,47 @@ jobs:
       - name: Install packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y libsdl2-dev libsdl2-ttf-dev libharfbuzz-dev fontconfig
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev xvfb
 
-      - uses: mlugg/setup-zig@v2
+      - uses: subosito/flutter-action@v2
         with:
-          version: 0.16.0
-
-      - uses: jiro4989/setup-nim-action@v2
-        with:
-          nim-version: '2.2.x'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          channel: stable
+          cache: true
 
       - name: Cache libghostty-vt
+        id: vt-cache
         uses: actions/cache@v4
         with:
           path: vendor/ghostty-vt
           key: ghostty-vt-${{ runner.os }}-${{ hashFiles('scripts/build-libghostty-vt.sh') }}
 
+      # Built from the pinned Ghostty commit, and cached until the pin changes.
+      - uses: mlugg/setup-zig@v2
+        if: steps.vt-cache.outputs.cache-hit != 'true'
+        with:
+          version: 0.16.0
+      - name: Get libghostty-vt
+        if: steps.vt-cache.outputs.cache-hit != 'true'
+        run: sh scripts/build-libghostty-vt.sh
+
+      - name: Test
+        run: |
+          flutter pub get
+          flutter analyze --no-fatal-infos
+          flutter test
+
       - name: Build AppImage
         env:
-          NIM_FLAGS: -d:autoUpdate -d:updateRepo=${{ github.repository }}
-          LDAI_UPDATE_INFORMATION: gh-releases-zsync|${{ github.repository_owner }}|${{ github.event.repository.name }}|release|ghostnim-x86_64.AppImage.zsync
+          FLUTTER_FLAGS: --dart-define=AUTO_UPDATE=true --dart-define=UPDATE_REPO=${{ github.repository }}
+          UPDATE_INFORMATION: gh-releases-zsync|${{ github.repository_owner }}|${{ github.event.repository.name }}|release|ghostnim-x86_64.AppImage.zsync
         run: |
-          VERSION="$(sed -n 's/^version *= *"\(.*\)"/\1/p' ghostnim.nimble)+${{ github.run_number }}" \
+          VERSION="$(sed -n 's/^version: *\([^+]*\).*/\1/p' pubspec.yaml)+${{ github.run_number }}" \
             sh scripts/build-appimage.sh
           ls -l "$OUTPUT" "$OUTPUT.zsync"
 
       - name: Smoke test
-        run: |
-          APPIMAGE_EXTRACT_AND_RUN=1 ./"$OUTPUT" --help
-          # The binary must run on any x86-64 CPU (the runner's CPU has
-          # AVX-512; users' may not, and would get SIGILL). Only Wuffs's
-          # *_x86_avx2 functions may use AVX: it calls them after checking
-          # the CPU at runtime.
-          objdump -d ghostnim | awk '
-            /^[0-9a-f]+ <.*>:$/ { fn = $2 }
-            /%zmm[0-9]/ || (/%ymm[0-9]/ && fn !~ /^<wuffs_.*_x86_avx2>:$/) { bad[fn]++ }
-            END {
-              for (f in bad) { print "error: AVX/AVX-512 in " f >"/dev/stderr"; n++ }
-              exit (n > 0)
-            }'
+        # GTK needs a display even to print --help.
+        run: APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a ./"$OUTPUT" --help | grep "^Usage: ghostnim"
 
       - uses: actions/upload-artifact@v4
         with:

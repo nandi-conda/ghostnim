@@ -1,0 +1,29 @@
+name: ghostnim
+description: A terminal emulator in Flutter, built on libghostty-vt.
+publish_to: 'none'
+version: 0.2.0
+
+environment:
+  sdk: ^3.5.0
+  flutter: '>=3.27.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  ffi: ^2.1.0
+  path: ^1.9.0
+  flutter_pty: ^0.4.2
+  flatkit:
+    git:
+      url: https://github.com/codegod100/flutterkit.git
+      ref: main
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - docs/config.kdl

@@ -1,7 +1,15 @@
 /vendor/
-/ghostnim
-/nimcache/
-*.o
 /build/
 *.AppImage
 *.zsync
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/linux/flutter/ephemeral/
+*.iml
+.idea/

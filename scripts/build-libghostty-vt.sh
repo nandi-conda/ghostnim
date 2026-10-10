@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # Build libghostty-vt from Ghostty's source and install it into
-# ./vendor/ghostty-vt (headers + libghostty-vt.a/.so), where config.nims
+# ./vendor/ghostty-vt (headers + libghostty-vt.a/.so), where the Flutter build
 # looks for it.
 #
 # Requirements: git and Zig 0.16.x (https://ziglang.org/download/).

@@ -1,6 +1,7 @@
 # ghostnim
 
-A terminal emulator written in [Nim](https://nim-lang.org), built on
+A terminal emulator written in [Flutter](https://flutter.dev) (Linux
+desktop), built on
 **libghostty-vt**, the embeddable C library for
 [Ghostty](https://ghostty.org)'s terminal core.
 
@@ -9,18 +10,19 @@ A terminal emulator written in [Nim](https://nim-lang.org), built on
 libghostty-vt does the actual terminal work: VT parsing, screen and scrollback
 state, reflow on resize, key and mouse encoding, selection, and the **render
 state**, a snapshot of exactly what to draw with per-row dirty tracking.
-ghostnim supplies the rest: an SDL2 window, SDL_ttf glyph rendering, a pty, and
-the event loop.
+ghostnim supplies the rest: the window, glyph rendering, a pty and the UI,
+with widgets from [flatkit](https://github.com/codegod100/flutterkit). It
+talks to libghostty-vt through `dart:ffi`. (The name is from its first
+version, written in Nim; that code is in the git history.)
 
 ## Features
 
 - Rendering driven by libghostty's render-state API. Only the rows libghostty
-  marks dirty are redrawn, into a persistent grid texture.
+  marks dirty are redrawn; each row's drawing is cached as a picture.
 - Truecolor and 256 colours. Bold, italic, faint, inverse, invisible,
   underline, double underline, strikethrough and overline.
-- Wide characters, plus per-glyph font fallback through fontconfig (CJK,
-  symbols).
-- Font shaping through HarfBuzz: programming ligatures (Monaspace Frozen,
+- Wide characters, plus per-glyph font fallback (CJK, symbols, emoji).
+- Font shaping: programming ligatures (Monaspace Frozen,
   JetBrains Mono, Fira Code) and contextual alternates (Monaspace's texture healing), kept on
   the cell grid.
 - Box-drawing and block characters drawn procedurally, so lines join
@@ -112,62 +114,62 @@ the event loop.
 
 ### 1. Dependencies
 
-- Nim ≥ 1.6 (Nim 2.x recommended)
-- SDL2 and SDL2_ttf development packages
-- HarfBuzz (development package), for ligatures and other font shaping
-- fontconfig (`fc-match`) for font discovery and fallback (optional but
-  recommended)
-- Zig 0.16 and git, to build libghostty-vt
+- [Flutter](https://docs.flutter.dev/get-started/install/linux/desktop) 3.x
+  with Linux desktop support (clang, cmake, ninja, pkg-config and the GTK 3
+  development package)
+- curl, to fetch the prebuilt libghostty-vt, or Zig 0.16 and git to build it
 
-On Debian/Ubuntu:
+On Debian/Ubuntu, besides Flutter:
 
 ```sh
-sudo apt install nim libsdl2-dev libsdl2-ttf-dev libharfbuzz-dev fontconfig fonts-dejavu-core
-# Zig 0.16: https://ziglang.org/download/ (or `pip install ziglang==0.16.0`)
+sudo apt install clang cmake ninja-build pkg-config libgtk-3-dev curl
 ```
 
 The default font, Monaspace Neon Frozen, isn't packaged by most distros:
 copy `fonts/frozen/MonaspaceNeonFrozen-*.ttf` from a
 [Monaspace release](https://github.com/githubnext/monaspace/releases) into
-`~/.local/share/fonts`. Without it ghostnim uses Monaspace Neon if that's
-installed, else your system's `monospace` font.
+`~/.local/share/fonts` (the AppImage bundles it). Without it ghostnim uses
+Monaspace Neon if that's installed, else DejaVu Sans Mono or your system's
+`monospace` font.
 
-### 2. Build libghostty-vt
+### 2. Get libghostty-vt
 
 ```sh
-nimble vt            # or: sh scripts/build-libghostty-vt.sh
+sh scripts/fetch-libghostty-vt.sh    # prebuilt, from the libghostty-vt release
+# or build it yourself (needs Zig 0.16):
+sh scripts/build-libghostty-vt.sh
 ```
 
-This clones Ghostty at a pinned commit into `vendor/ghostty-src` and installs
-headers and libraries into `vendor/ghostty-vt`. To use a libghostty-vt you
-already have, set `GHOSTTY_VT_PREFIX=/path/to/prefix`.
+Either way the headers and libraries land in `vendor/ghostty-vt`. The
+prebuilt one comes from `.github/workflows/libghostty-vt.yml`, which builds the
+Ghostty commit pinned in `scripts/build-libghostty-vt.sh` whenever that pin
+changes. To use a libghostty-vt you already have, pass
+`-DGHOSTTY_VT_PREFIX=/path/to/prefix` to CMake (or edit `linux/CMakeLists.txt`).
 
 ### 3. Build ghostnim
 
 ```sh
-nimble build -d:release
-# or: nim c -d:release -o:ghostnim src/ghostnim.nim
-./ghostnim
+flutter build linux --release
+build/linux/x64/release/bundle/ghostnim
 ```
 
-ghostnim links libghostty-vt statically by default. Set `GHOSTTY_VT_SHARED=1`
-to link the shared library instead (needed if you built libghostty with
-`SIMD=true`).
+The bundle carries `lib/libghostty-vt.so` next to the Flutter libraries. For
+development, `flutter run -d linux` works too, and `flutter test` runs the
+unit tests.
 
 ### AppImage
 
 ```sh
-nimble appimage      # or: sh scripts/build-appimage.sh
+sh scripts/build-appimage.sh
 ```
 
-This builds a release binary and packages it with
-[linuxdeploy](https://github.com/linuxdeploy/linuxdeploy), which is downloaded
+This builds the release bundle and packages it with
+[appimagetool](https://github.com/AppImage/appimagetool), which is downloaded
 into `build/tools` on first use. The result is
-`ghostnim-<version>-<arch>.AppImage` in the repository root. SDL2, SDL2_ttf
-and their dependencies are bundled. If your SDL2 is sdl2-compat (as on Arch),
-the SDL3 library it loads at runtime is bundled too. Monaspace Neon Frozen
-(the default font), DejaVu Sans Mono and Symbols Nerd Font are bundled as well;
-other fonts are still found through the host's fontconfig.
+`ghostnim-<version>-<arch>.AppImage` in the repository root. Monaspace Neon
+Frozen (the default font), DejaVu Sans Mono and Symbols Nerd Font are bundled
+and loaded at startup; other fonts are found through the host's fontconfig.
+GTK 3 comes from the host, as for any Flutter app.
 
 ### Prebuilt AppImage and updates
 
@@ -187,7 +189,7 @@ right-click menu runs the same check right away, and reports the result as a
 desktop notification (via `notify-send`, if installed). The update information is also
 embedded in the AppImage, so AppImageUpdate, Gear Lever and similar tools can
 update it too. Locally built AppImages don't self-update unless built with
-`NIM_FLAGS=-d:autoUpdate`.
+`FLUTTER_FLAGS=--dart-define=AUTO_UPDATE=true`.
 
 ## Usage
 
@@ -195,7 +197,7 @@ update it too. Locally built AppImages don't self-update unless built with
 ghostnim [options] [-e command [args...]]
 
   -c, --config FILE      config file  [$XDG_CONFIG_HOME/ghostnim/config.kdl]
-  -f, --font NAME|PATH   font family (fontconfig) or font file   [Monaspace Neon Frozen]
+  -f, --font NAME|PATH   font family or font file                 [Monaspace Neon Frozen]
   -s, --size N           font size in points                      [14]
       --no-font-shaping  draw characters one by one: no ligatures or
                          contextual alternates
@@ -205,7 +207,6 @@ ghostnim [options] [-e command [args...]]
   -d, --working-directory DIR  start the first tab in DIR  [current directory]
       --no-inherit-directory   start new tabs in the working directory too,
                          not in the current tab's directory
-      --screenshot FILE  render one frame after startup to FILE (BMP) and exit
   -e, --exec CMD ...     run CMD instead of $SHELL (must be last)
 ```
 
@@ -276,23 +277,27 @@ stderr and skipped, so a broken config never stops the terminal from starting.
 
 | File | Purpose |
 | --- | --- |
-| `src/ghostnim.nim` | App: window, tabs, event loop, pty wiring, input, selection, clipboard |
-| `src/ghostnim/vt.nim` | Nim bindings for the libghostty-vt C API |
-| `src/ghostnim/keys.nim` | `GhosttyKey` enum (generated from `key/event.h`) |
-| `src/ghostnim/filepane.nim` | The file manager pane: folder listing, layout and drawing |
-| `src/ghostnim/renderer.nim` | Walks the libghostty render state and draws cells and the tab bar with SDL |
-| `src/ghostnim/boxdraw.nim` | Procedural box-drawing and block elements |
-| `src/ghostnim/input.nim` | SDL scancode/modifier → libghostty key mapping |
-| `src/ghostnim/pty.nim` | `forkpty`-based child process |
-| `src/ghostnim/sdl.nim` | Minimal SDL2/SDL_ttf bindings |
-| `src/ghostnim/config.nim` | Loads the KDL config file |
-| `src/ghostnim/keybinds.nim` | Key chords, actions and the default keybindings |
-| `src/ghostnim/kdl.nim` | Small dependency-free KDL parser |
-| `src/ghostnim/update.nim` | Background self-update for CI-built AppImages |
+| `lib/main.dart` | Entry point: command line, config, `runApp` |
+| `lib/src/app.dart` | The window: tabs, folder strip, file pane, terminal view, menu, keyboard and mouse, selection, clipboard |
+| `lib/src/session.dart` | One tab: libghostty terminal, render state snapshot, pty, key/mouse encoders |
+| `lib/src/renderer.dart` | Paints the render state: cells, decorations, cursor, cached row pictures |
+| `lib/src/boxdraw.dart` | Procedural box-drawing and block elements |
+| `lib/src/vt.dart` | `dart:ffi` bindings for the libghostty-vt C API |
+| `lib/src/keys.dart` | `GhosttyKey` values (generated from `key/event.h`) |
+| `lib/src/input.dart` | Flutter physical key/modifier → libghostty key mapping |
+| `lib/src/file_pane.dart` | The file manager pane: folder listing and its widget |
+| `lib/src/state.dart` | Recent folders and pane settings, `xdg-open`, `$EDITOR` |
+| `lib/src/options.dart` | Command line parsing, merged over the config |
+| `lib/src/config.dart` | Loads the KDL config file |
+| `lib/src/keybinds.dart` | Key chords, actions and the default keybindings |
+| `lib/src/kdl.dart` | Small dependency-free KDL parser |
+| `lib/src/links.dart`, `wordsel.dart`, `paths.dart` | URL, word and path detection under the pointer |
+| `lib/src/update.dart` | Background self-update for CI-built AppImages |
+| `linux/runner/` | GTK runner, plus the `ghostnim/window` channel for the title and size |
 
 ## Notes
 
 - libghostty-vt's API is still pre-1.0. The bindings target the commit pinned
   in `scripts/build-libghostty-vt.sh`.
-- Not implemented yet: Kitty graphics, ligatures/shaping, colour emoji,
-  and hyperlinks.
+- Not implemented yet: Kitty graphics, and input methods (IME) / dead keys:
+  keys go straight to libghostty's key encoder.
