@@ -191,6 +191,20 @@ embedded in the AppImage, so AppImageUpdate, Gear Lever and similar tools can
 update it too. Locally built AppImages don't self-update unless built with
 `FLUTTER_FLAGS=--dart-define=AUTO_UPDATE=true`.
 
+### conda package
+
+The same CI build is packaged with [rattler-build](https://rattler.build)
+(`recipe/recipe.yaml`) and published from `main` to the `nandi-test` channel
+on prefix.dev:
+
+```sh
+pixi global install -c https://prefix.dev/nandi-test -c conda-forge ghostnim
+```
+
+GTK 3 comes from the host, as with the AppImage. To build the package
+locally, run `sh scripts/build-appimage.sh`, then
+`rattler-build build --recipe recipe`.
+
 ## Usage
 
 ```

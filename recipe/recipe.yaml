@@ -1,0 +1,48 @@
+# conda package of ghostnim, built by .github/workflows/appimage.yml and
+# published to the nandi-test channel on prefix.dev. It repackages the AppDir
+# that scripts/build-appimage.sh lays out (the Flutter bundle with
+# libghostty-vt and the bundled fonts), so build that first:
+#
+#   sh scripts/build-appimage.sh
+#   GHOSTNIM_VERSION=0.2.0 rattler-build build --recipe recipe
+#
+# Like the AppImage, GTK 3 comes from the host.
+context:
+  version: ${{ env.get("GHOSTNIM_VERSION", default="0.0.0") }}
+  build_number: ${{ env.get("GHOSTNIM_BUILD_NUMBER", default="0") }}
+
+package:
+  name: ghostnim
+  version: ${{ version }}
+
+source:
+  path: ../build/AppDir
+
+build:
+  number: ${{ build_number | int }}
+  skip: not linux
+  script:
+    - mkdir -p $PREFIX/lib $PREFIX/bin $PREFIX/share/applications $PREFIX/share/icons/hicolor/scalable/apps
+    - cp -a usr/lib/ghostnim $PREFIX/lib/ghostnim
+    - ln -s ../lib/ghostnim/ghostnim $PREFIX/bin/ghostnim
+    - cp ghostnim.desktop $PREFIX/share/applications/
+    - cp ghostnim.svg $PREFIX/share/icons/hicolor/scalable/apps/
+  # The Flutter bundle already finds its libraries through $ORIGIN/lib.
+  dynamic_linking:
+    binary_relocation: false
+  prefix_detection:
+    ignore: true
+
+tests:
+  - package_contents:
+      bin:
+        - ghostnim
+      files:
+        - lib/ghostnim/ghostnim
+        - lib/ghostnim/lib/libghostty-vt.so*
+        - lib/ghostnim/data/fonts/**
+
+about:
+  homepage: https://github.com/codegod100/ghostnim
+  repository: https://github.com/codegod100/ghostnim
+  summary: A terminal emulator in Flutter, built on libghostty-vt.
