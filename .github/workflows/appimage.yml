@@ -69,7 +69,8 @@ jobs:
 
       - name: Smoke test
         # GTK needs a display even to print --help.
-        run: APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a ./"$OUTPUT" --help | grep "^Usage: ghostnim"
+        run: |
+          APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a ./"$OUTPUT" --help | grep "^Usage: ghostnim"
 
       - uses: actions/upload-artifact@v4
         with:
