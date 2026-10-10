@@ -23,6 +23,8 @@
 #   UPDATE_INFORMATION  update information to embed; appimagetool then also
 #                 writes <OUTPUT>.zsync (see .github/workflows/appimage.yml)
 #   SKIP_BUILD=1  package the existing release bundle instead of rebuilding
+#   APPDIR_ONLY=1 stop after laying out build/AppDir (the conda recipe
+#                 packages it; see recipe/recipe.yaml)
 #   MONASPACE_VERSION, DEJAVU_VERSION, NERD_FONTS_VERSION
 #                 bundled font releases
 set -eu
@@ -60,7 +62,7 @@ fetch() { # name url
   chmod +x "$TOOLS/$1.part"
   mv "$TOOLS/$1.part" "$TOOLS/$1"
 }
-if [ -z "${APPIMAGETOOL:-}" ]; then
+if [ -z "${APPIMAGETOOL:-}" ] && [ "${APPDIR_ONLY:-0}" != 1 ]; then
   fetch "appimagetool-$ARCH.AppImage" \
     "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$ARCH.AppImage"
   APPIMAGETOOL="$TOOLS/appimagetool-$ARCH.AppImage"
@@ -119,6 +121,11 @@ HERE=$(dirname "$(readlink -f "$0")")
 exec "$HERE/usr/lib/ghostnim/ghostnim" "$@"
 APPRUN
 chmod +x "$APPDIR/AppRun"
+
+if [ "${APPDIR_ONLY:-0}" = 1 ]; then
+  echo "laid out $APPDIR"
+  exit 0
+fi
 
 # APPIMAGE_EXTRACT_AND_RUN: run appimagetool's own AppImage without FUSE.
 set -- "$APPDIR" "$ROOT/$OUTPUT"

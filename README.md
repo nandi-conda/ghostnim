@@ -193,16 +193,17 @@ update it too. Locally built AppImages don't self-update unless built with
 
 ### conda package
 
-The same CI build is packaged with [rattler-build](https://rattler.build)
-(`recipe/recipe.yaml`) and published from `main` to the `nandi-testing` channel
-on prefix.dev:
+`.github/workflows/package.yml` builds the app the same way and packages it
+with [rattler-build](https://rattler.build) (`recipe/recipe.yaml`), through the
+shared [nandi-conda/ci](https://github.com/nandi-conda/ci) workflow, which
+publishes it from `main` to the `nandi-testing` channel on prefix.dev:
 
 ```sh
 pixi global install -c https://prefix.dev/nandi-testing -c conda-forge ghostnim
 ```
 
 GTK 3 comes from the host, as with the AppImage. To build the package
-locally, run `sh scripts/build-appimage.sh`, then
+locally, run `APPDIR_ONLY=1 sh scripts/build-appimage.sh`, then
 `rattler-build build --recipe recipe`.
 
 ## Usage

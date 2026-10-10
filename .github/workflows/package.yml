@@ -1,0 +1,28 @@
+# Builds ghostnim's conda package (recipe/recipe.yaml) with the shared
+# nandi-conda workflow and, on pushes to main, publishes it to
+# prefix.dev/nandi-testing. All the logic lives in https://github.com/nandi-conda/ci.
+name: Package
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  package:
+    uses: nandi-conda/ci/.github/workflows/conda-package.yml@main
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      flutter: true
+      # The recipe packages build/AppDir, laid out by build-appimage.sh. Uploads
+      # skip existing files, so every run gets its own build number (offset past
+      # the builds the AppImage workflow published, up to #75).
+      pre-build: |
+        sh scripts/fetch-libghostty-vt.sh
+        APPDIR_ONLY=1 sh scripts/build-appimage.sh
+        echo "GHOSTNIM_VERSION=$(sed -n 's/^version: *\([^+]*\).*/\1/p' pubspec.yaml)" >> "$GITHUB_ENV"
+        echo "GHOSTNIM_BUILD_NUMBER=$((GITHUB_RUN_NUMBER + 100))" >> "$GITHUB_ENV"

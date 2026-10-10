@@ -1,9 +1,9 @@
-# conda package of ghostnim, built by .github/workflows/appimage.yml and
-# published to the nandi-testing channel on prefix.dev. It repackages the AppDir
+# conda package of ghostnim, built by .github/workflows/package.yml (the shared
+# nandi-conda/ci workflow) and published to prefix.dev/nandi-testing. It repackages the AppDir
 # that scripts/build-appimage.sh lays out (the Flutter bundle with
 # libghostty-vt and the bundled fonts), so build that first:
 #
-#   sh scripts/build-appimage.sh
+#   APPDIR_ONLY=1 sh scripts/build-appimage.sh
 #   GHOSTNIM_VERSION=0.2.0 rattler-build build --recipe recipe
 #
 # Like the AppImage, GTK 3 comes from the host.
