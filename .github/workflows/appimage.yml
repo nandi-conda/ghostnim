@@ -43,14 +43,16 @@ jobs:
           path: vendor/ghostty-vt
           key: ghostty-vt-${{ runner.os }}-${{ hashFiles('scripts/build-libghostty-vt.sh') }}
 
-      # Built from the pinned Ghostty commit, and cached until the pin changes.
+      # The prebuilt one from the libghostty-vt release (rebuilt by
+      # libghostty-vt.yml whenever the pinned Ghostty commit changes), else
+      # built here.
       - uses: mlugg/setup-zig@v2
         if: steps.vt-cache.outputs.cache-hit != 'true'
         with:
           version: 0.16.0
       - name: Get libghostty-vt
         if: steps.vt-cache.outputs.cache-hit != 'true'
-        run: sh scripts/build-libghostty-vt.sh
+        run: sh scripts/fetch-libghostty-vt.sh || sh scripts/build-libghostty-vt.sh
 
       - name: Test
         run: |
