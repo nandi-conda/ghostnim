@@ -1,0 +1,40 @@
+# Builds libghostty-vt (headers, static and shared libraries) at the commit
+# pinned in scripts/build-libghostty-vt.sh and publishes it to the
+# `libghostty-vt` release, so the app can be developed without Zig.
+name: libghostty-vt
+
+on:
+  push:
+    paths:
+      - scripts/build-libghostty-vt.sh
+      - .github/workflows/libghostty-vt.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: mlugg/setup-zig@v2
+        with:
+          version: 0.16.0
+      - name: Build
+        run: sh scripts/build-libghostty-vt.sh
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tar -C vendor -czf libghostty-vt-linux-x86_64.tar.gz ghostty-vt
+          tag=libghostty-vt
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" libghostty-vt-linux-x86_64.tar.gz --clobber
+          else
+            git tag -f "$tag" "$GITHUB_SHA"
+            git push -f origin "refs/tags/$tag"
+            gh release create "$tag" libghostty-vt-linux-x86_64.tar.gz --verify-tag \
+              --prerelease --title "libghostty-vt" \
+              --notes "libghostty-vt built from the Ghostty commit pinned in scripts/build-libghostty-vt.sh."
+          fi
