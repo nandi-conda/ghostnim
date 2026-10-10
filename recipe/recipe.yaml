@@ -1,5 +1,5 @@
 # conda package of ghostnim, built by .github/workflows/appimage.yml and
-# published to the nandi-test channel on prefix.dev. It repackages the AppDir
+# published to the nandi-testing channel on prefix.dev. It repackages the AppDir
 # that scripts/build-appimage.sh lays out (the Flutter bundle with
 # libghostty-vt and the bundled fonts), so build that first:
 #
