@@ -108,7 +108,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Earlier builds were published as one release per build
-          # (build-YYYYMMDD-N); delete them along with their tags.
+          # (build-YYYYMMDD-N); delete them along with their tags. Keep the
+          # libghostty-vt release, which builds download libghostty-vt from.
           gh release list --limit 1000 --json tagName --jq '.[].tagName' |
-            grep -v '^release$' |
+            grep -vxE 'release|libghostty-vt' |
             xargs -r -n1 gh release delete --cleanup-tag --yes

@@ -4,10 +4,10 @@
 # ./vendor/ghostty-vt, so building ghostnim doesn't need Zig.
 #
 # Environment:
-#   GHOSTNIM_REPO  GitHub repo with the libghostty-vt release (default: codegod100/ghostnim)
+#   GHOSTNIM_REPO  GitHub repo with the libghostty-vt release (default: nandi-conda/ghostnim)
 set -eu
 
-REPO=${GHOSTNIM_REPO:-codegod100/ghostnim}
+REPO=${GHOSTNIM_REPO:-nandi-conda/ghostnim}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 URL="https://github.com/$REPO/releases/download/libghostty-vt/libghostty-vt-linux-x86_64.tar.gz"
 
